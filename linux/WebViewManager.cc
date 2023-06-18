@@ -36,9 +36,9 @@ WebViewManager::~WebViewManager()
     this->_container = nullptr;
 }
 
-uint64_t WebViewManager::create_webview()
+uint64_t WebViewManager::create_webview(FlValue *args)
 {
-    auto webview = new WebView(this->_channel, this->_container);
+    auto webview = new WebView(args, this->_channel, this->_container);
     this->_webviews.push_back(webview);
     g_message("Created webview #%ld, %ld views total.", (uint64_t)webview, this->_webviews.size());
     return (uint64_t)webview;

@@ -30,6 +30,33 @@ class WebView extends StatelessWidget {
   }
 }
 
+class WebViewSettings {
+  final List<String>? corsAllowList;
+  final bool? allowFileAccessFromFileUrls;
+  final bool? enableDeveloperExtras;
+
+  WebViewSettings(
+      {this.corsAllowList,
+      this.allowFileAccessFromFileUrls,
+      this.enableDeveloperExtras});
+
+  Map<dynamic, dynamic> _toMap() {
+    final ret = <String, dynamic>{};
+
+    if (corsAllowList != null) {
+      ret["cors_allowlist"] = corsAllowList;
+    }
+    if (allowFileAccessFromFileUrls != null) {
+      ret["allow_file_access_from_file_urls"] = allowFileAccessFromFileUrls;
+    }
+    if (enableDeveloperExtras != null) {
+      ret["enable_developer_extras"] = enableDeveloperExtras;
+    }
+
+    return ret;
+  }
+}
+
 class WebViewController {
   final _plugin = FlutterWebkit();
   int _handle = 0;
@@ -42,8 +69,9 @@ class WebViewController {
 
   int _jsCallId = 0;
 
-  WebViewController({String? uri}) {
-    _plugin.createWebView().then((value) {
+  WebViewController({String? uri, WebViewSettings? settings}) {
+    settings ??= WebViewSettings();
+    _plugin.createWebView(settings._toMap()).then((value) {
       _handle = value!;
 
       _loadEvents.addStream(_plugin.getLoadEvents(_handle));
@@ -100,7 +128,7 @@ class WebViewController {
     }
   }
 
-   Future<void> unregisterJavascriptCallback(String name) async {
+  Future<void> unregisterJavascriptCallback(String name) async {
     await ready;
     if (!_registeredJsCallbacks.containsKey(name)) {
       return;
@@ -124,12 +152,17 @@ class WebViewController {
     return _plugin.reload(_handle, bypassCache);
   }
 
+  Future<void> openInspector() async {
+    await ready;
+    return _plugin.openInspector(_handle);
+  }
+
   void _update(Rect rect) async {
     await ready;
     _plugin.setDimension(_handle, rect);
   }
 
-   Future<void> dispose() async {
+  Future<void> dispose() async {
     await ready;
     for (final cb in _registeredJsCallbacks.keys.toList()) {
       await unregisterJavascriptCallback(cb);

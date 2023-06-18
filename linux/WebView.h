@@ -18,7 +18,7 @@ typedef struct
 class WebView
 {
 public:
-    WebView(FlMethodChannel* method_channel, GtkFixed* container);
+    WebView(FlValue *args, FlMethodChannel* method_channel, GtkFixed* container);
     ~WebView();
 
     void resize(int width, int height);
@@ -28,6 +28,7 @@ public:
     void reload(bool bypass_cache);
     bool register_javascript_callback(const gchar* name);
     void unregister_javascript_callback(const gchar* name);
+    void open_inspector();
 
 private:
     WebKitWebView *_webview;

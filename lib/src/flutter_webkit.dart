@@ -9,8 +9,8 @@ class FlutterWebkit {
     return FlutterWebkitPlatform.instance.getPlatformVersion();
   }
 
-  Future<int?> createWebView() {
-    return FlutterWebkitPlatform.instance.createWebView();
+  Future<int?> createWebView(Map<dynamic,dynamic> args) {
+    return FlutterWebkitPlatform.instance.createWebView(args);
   }
 
   Future<void> destroyWebView(int webviewId) {
@@ -59,5 +59,9 @@ class FlutterWebkit {
   Stream<dynamic> getJavascriptCallbackStream(int webviewId, String name) {
     return FlutterWebkitPlatform.instance
         .getJavascriptCallbackStream(webviewId, name);
+  }
+
+  Future<void> openInspector(int webviewId) {
+    return FlutterWebkitPlatform.instance.openInspector(webviewId);
   }
 }

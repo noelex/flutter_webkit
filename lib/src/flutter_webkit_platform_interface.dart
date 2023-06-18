@@ -46,7 +46,7 @@ abstract class FlutterWebkitPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<int?> createWebView() {
+  Future<int?> createWebView(Map<dynamic,dynamic> args) {
     throw UnimplementedError('createWebView() has not been implemented.');
   }
 
@@ -76,5 +76,9 @@ abstract class FlutterWebkitPlatform extends PlatformInterface {
 
   Future<void> unregisterJavascriptCallback(int webviewId, String name) {
     throw UnimplementedError('unregister_javascript_callback() has not been implemented.');
+  }
+
+  Future<void> openInspector(int webviewId) {
+    throw UnimplementedError('openInspector() has not been implemented.');
   }
 }

@@ -29,7 +29,7 @@ G_DEFINE_TYPE(FlutterWebkitPlugin, flutter_webkit_plugin, g_object_get_type())
 
 static FlMethodResponse *handle_create_webview(FlutterWebkitPlugin *self, FlValue *args)
 {
-  auto id = self->manager->create_webview();
+  auto id = self->manager->create_webview(args);
   g_autoptr(FlValue) result = fl_value_new_int(id);
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
@@ -258,6 +258,34 @@ static FlMethodResponse *handle_unregister_javascript_callback(FlutterWebkitPlug
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
+static FlMethodResponse *handle_open_inspector(FlutterWebkitPlugin *self, FlValue *args)
+{
+  auto arg_id = fl_value_lookup_string(args, "webview");
+
+  if (arg_id == NULL ||
+      fl_value_get_type(arg_id) != FL_VALUE_TYPE_INT)
+  {
+    g_warning("Unable to open inspector, invalid arguments.\n");
+  }
+  else
+  {
+    auto id = fl_value_get_int(arg_id);
+
+    auto webview = self->manager->get_webview(id);
+    if (webview == NULL)
+    {
+      g_warning("Unable to open inspector, webview #%ld is not found.\n", id);
+    }
+    else
+    {
+      webview->open_inspector();
+    }
+  }
+
+  g_autoptr(FlValue) result = fl_value_new_null();
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
 // Called when a method call is received from Flutter.
 static void flutter_webkit_plugin_handle_method_call(
     FlutterWebkitPlugin *self,
@@ -303,6 +331,10 @@ static void flutter_webkit_plugin_handle_method_call(
   else if (strcmp(method, "unregister_javascript_callback") == 0)
   {
     response = handle_unregister_javascript_callback(self, args);
+  }
+  else if (strcmp(method, "open_inspector") == 0)
+  {
+    response = handle_open_inspector(self, args);
   }
   else
   {

@@ -12,7 +12,7 @@ class WebViewManager {
         WebViewManager(FlMethodChannel *channel, FlView* fl);
         ~WebViewManager();
         
-        uint64_t create_webview();
+        uint64_t create_webview(FlValue *args);
         void destroy_webview(uint64_t id);
         WebView* get_webview(uint64_t id);
 

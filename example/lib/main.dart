@@ -19,7 +19,14 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController(uri: "https://threejs.org/");
+
+    _controller = WebViewController(
+      uri: "https://threejs.org",
+      settings: WebViewSettings(
+        enableDeveloperExtras: true,
+      )
+    );
+
     _controller.loadingStatusStream.listen((event) {
       debugPrint("Load state changed to '$event'.");
     });
@@ -35,7 +42,7 @@ class _MyAppState extends State<MyApp> {
     });
 
     _controller.registerJavascriptCallback(
-        "onLoadComplete", (data) => debugPrint("onLoadComplete: $data"));
+        "onLoadComplete", (data) => debugPrint("onLoadComplete: $data"));    
   }
 
   @override
@@ -51,7 +58,7 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         appBar: AppBar(
           title: StreamBuilder(
-            builder: (context, snapshot) => Text(snapshot.data ?? "Loading..."),
+            builder: (context, snapshot) => Text(snapshot.data ?? ""),
             stream: _controller.titleStream,
           ),
           actions: <Widget>[
@@ -60,6 +67,13 @@ class _MyAppState extends State<MyApp> {
               tooltip: 'Reload',
               onPressed: () {
                 _controller.reload();
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.search),
+              tooltip: 'Inspect',
+              onPressed: () {
+                _controller.openInspector();
               },
             )
           ],

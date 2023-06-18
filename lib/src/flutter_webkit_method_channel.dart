@@ -102,8 +102,8 @@ class MethodChannelFlutterWebkit extends FlutterWebkitPlatform {
   }
 
   @override
-  Future<int?> createWebView() {
-    return methodChannel.invokeMethod<int>('create_webview');
+  Future<int?> createWebView(Map<dynamic, dynamic> args) {
+    return methodChannel.invokeMethod<int>('create_webview', args);
   }
 
   @override
@@ -203,5 +203,11 @@ class MethodChannelFlutterWebkit extends FlutterWebkitPlatform {
         .where(
             (event) => event.webviewId == webviewId && event.data.name == name)
         .map((event) => event.data.data);
+  }
+
+  @override
+  Future<void> openInspector(int webviewId) {
+    return methodChannel
+        .invokeMethod<void>("open_inspector", {"webview": webviewId});
   }
 }
