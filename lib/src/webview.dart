@@ -21,7 +21,7 @@ class WebView extends StatelessWidget {
             controller._update(rect);
           }
         });
-        return Container(constraints: const BoxConstraints.expand());
+        return Container(constraints: const BoxConstraints.expand(), color: const Color(0x00000000),);
       },
     );
   }
@@ -32,11 +32,19 @@ class WebViewController {
   int _handle = 0;
   final _readyCompleter = Completer<void>();
   late final _loadEvents = StreamController<LoadEvent>.broadcast();
+  late final _uriEvents = StreamController<String?>.broadcast();
+  late final _titleEvents = StreamController<String?>.broadcast();
+
+  int _jsCallId = 0;
 
   WebViewController({String? uri}) {
     _plugin.createWebView().then((value) {
       _handle = value!;
+
       _loadEvents.addStream(_plugin.getLoadEvents(_handle));
+      _uriEvents.addStream(_plugin.getUriEvents(_handle));
+      _titleEvents.addStream(_plugin.getTitleEvents(_handle));
+
       _readyCompleter.complete();
       if (uri != null) {
         open(uri);
@@ -48,7 +56,15 @@ class WebViewController {
     return _readyCompleter.future;
   }
 
-  Stream<LoadEvent> get load {
+  Stream<String?> get uriStream {
+    return _uriEvents.stream;
+  }
+
+  Stream<String?> get titleStream {
+    return _titleEvents.stream;
+  }
+
+  Stream<LoadEvent> get loadingStatusStream {
     return _loadEvents.stream;
   }
 
@@ -59,7 +75,12 @@ class WebViewController {
 
   Future<dynamic> evaluateJavascript(String script) async {
     await ready;
-    return _plugin.evaluateJavascript(_handle, script);
+    return _plugin.evaluateJavascript(_handle, _jsCallId++, script);
+  }
+
+  Future<void> reload({bool bypassCache = false}) async{
+    await ready;
+    return _plugin.reload(_handle, bypassCache);
   }
 
   void _update(Rect rect) async {

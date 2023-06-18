@@ -13,11 +13,11 @@ public:
     void resize(int width, int height);
     void move(int x, int y);
     void load_uri(const gchar* uri);
-    uint64_t evaluate_javascript(const gchar* script);
+    void evaluate_javascript(uint64_t id, const gchar* script);
+    void reload(bool bypass_cache);
 
 private:
     WebKitWebView *_webview;
     GtkFixed* _container;
     FlMethodChannel* _method_channel;
-    std::atomic_uint64_t _js_call_id;
 };

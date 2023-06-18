@@ -13,6 +13,12 @@
   (G_TYPE_CHECK_INSTANCE_CAST((obj), flutter_webkit_plugin_get_type(), \
                               FlutterWebkitPlugin))
 
+// Fix IntelliSense errors
+#ifndef g_autoptr
+#define g_autoptr(x) x *
+#define g_autofree
+#endif
+
 struct _FlutterWebkitPlugin
 {
   GObject parent_instance;
@@ -30,7 +36,7 @@ static FlMethodResponse *handle_create_webview(FlutterWebkitPlugin *self, FlValu
 
 static FlMethodResponse *handle_destroy_webview(FlutterWebkitPlugin *self, FlValue *args)
 {
-  auto arg = fl_value_lookup_string(args, "id");
+  auto arg = fl_value_lookup_string(args, "webview");
   if (arg && fl_value_get_type(arg) == FL_VALUE_TYPE_INT)
   {
     auto id = fl_value_get_int(arg);
@@ -48,7 +54,7 @@ static FlMethodResponse *handle_destroy_webview(FlutterWebkitPlugin *self, FlVal
 
 static FlMethodResponse *handle_set_dimension(FlutterWebkitPlugin *self, FlValue *args)
 {
-  auto arg_id = fl_value_lookup_string(args, "id");
+  auto arg_id = fl_value_lookup_string(args, "webview");
   auto arg_x = fl_value_lookup_string(args, "x");
   auto arg_y = fl_value_lookup_string(args, "y");
   auto arg_w = fl_value_lookup_string(args, "w");
@@ -92,7 +98,7 @@ static FlMethodResponse *handle_set_dimension(FlutterWebkitPlugin *self, FlValue
 
 static FlMethodResponse *handle_open(FlutterWebkitPlugin *self, FlValue *args)
 {
-  auto arg_id = fl_value_lookup_string(args, "id");
+  auto arg_id = fl_value_lookup_string(args, "webview");
   auto arg_uri = fl_value_lookup_string(args, "uri");
 
   if (arg_id == NULL || arg_uri == NULL ||
@@ -124,39 +130,70 @@ static FlMethodResponse *handle_open(FlutterWebkitPlugin *self, FlValue *args)
 
 static FlMethodResponse *handle_evaluate_javascript(FlutterWebkitPlugin *self, FlValue *args)
 {
+  auto arg_webview = fl_value_lookup_string(args, "webview");
   auto arg_id = fl_value_lookup_string(args, "id");
   auto arg_script = fl_value_lookup_string(args, "script");
 
-  if (arg_id == NULL || arg_script == NULL ||
+  if (arg_webview == NULL || arg_id == NULL || arg_script == NULL ||
+      fl_value_get_type(arg_webview) != FL_VALUE_TYPE_INT ||
       fl_value_get_type(arg_id) != FL_VALUE_TYPE_INT ||
       fl_value_get_type(arg_script) != FL_VALUE_TYPE_STRING)
   {
     g_warning("Unable to evaluate javascript, invalid arguments.\n");
-    g_autoptr(FlValue) result = fl_value_new_null();
-    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
   }
   else
   {
+    auto webviewId = fl_value_get_int(arg_webview);
     auto id = fl_value_get_int(arg_id);
     auto script = fl_value_get_string(arg_script);
 
-    auto webview = self->manager->get_webview(id);
+    auto webview = self->manager->get_webview(webviewId);
     if (webview == NULL)
     {
-      g_warning("Unable to evaluate javascript, webview #%ld is not found.\n", id);
-      g_autoptr(FlValue) result = fl_value_new_null();
-      return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+      g_warning("Unable to evaluate javascript, webview #%ld is not found.\n", webviewId);
     }
     else
     {
       g_debug("Evaluating javascript in webview #%ld..\n", id);
-      auto id = webview->evaluate_javascript(script);
-      g_autoptr(FlValue) result = fl_value_new_int(id);
-      return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+      webview->evaluate_javascript(id, script);
     }
   }
+
+  g_autoptr(FlValue) result = fl_value_new_null();
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
+static FlMethodResponse *handle_reload(FlutterWebkitPlugin *self, FlValue *args)
+{
+  auto arg_id = fl_value_lookup_string(args, "webview");
+  auto arg_bypass_cache = fl_value_lookup_string(args, "bypass_cache");
+
+  if (arg_id == NULL || arg_bypass_cache == NULL ||
+      fl_value_get_type(arg_id) != FL_VALUE_TYPE_INT ||
+      fl_value_get_type(arg_bypass_cache) != FL_VALUE_TYPE_BOOL)
+  {
+    g_warning("Unable to reload, invalid arguments.\n");
+  }
+  else
+  {
+    auto id = fl_value_get_int(arg_id);
+    auto bypass_cache = fl_value_get_bool(arg_bypass_cache);
+
+    auto webview = self->manager->get_webview(id);
+    if (webview == NULL)
+    {
+      g_warning("Unable to reload, webview #%ld is not found.\n", id);
+    }
+    else
+    {
+      g_message("Reloading webview #%ld, bypass_cache = %s.\n", id, bypass_cache ? "yes" : "no");
+      webview->reload(bypass_cache);
+    }
+  }
+
+  g_autoptr(FlValue) result = fl_value_new_null();
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
 // Called when a method call is received from Flutter.
 static void flutter_webkit_plugin_handle_method_call(
     FlutterWebkitPlugin *self,
@@ -190,6 +227,10 @@ static void flutter_webkit_plugin_handle_method_call(
   else if (strcmp(method, "evaluate_javascript") == 0)
   {
     response = handle_evaluate_javascript(self, args);
+  }
+  else if (strcmp(method, "reload") == 0)
+  {
+    response = handle_reload(self, args);
   }
   else
   {

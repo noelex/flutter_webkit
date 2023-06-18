@@ -20,11 +20,11 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _controller = WebViewController(uri: "https://threejs.org/");
-    _controller.load.listen((event) {
+    _controller.loadingStatusStream.listen((event) {
       debugPrint("Load state changed to '$event'.");
     });
 
-    _controller.load
+    _controller.loadingStatusStream
         .where((element) => element == LoadEvent.finished)
         .listen((value) async {
       final val = await _controller.evaluateJavascript(
@@ -42,9 +42,23 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: StreamBuilder(
+            builder: (context, snapshot) => Text(snapshot.data ?? "Loading..."),
+            stream: _controller.titleStream,
+          ),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Reload',
+              enableFeedback: true,
+              onPressed: () {
+                _controller.reload();
+              },
+            )
+          ],
         ),
         body: Center(
           child: WebView(controller: _controller),

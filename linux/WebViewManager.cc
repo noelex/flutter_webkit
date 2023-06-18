@@ -14,6 +14,14 @@ WebViewManager::WebViewManager(FlMethodChannel *channel, FlView *fl)
     this->_container = GTK_FIXED(fixed);
     gtk_overlay_add_overlay(overlay, fixed);
     gtk_widget_show(fixed);
+
+    gtk_overlay_set_overlay_pass_through(overlay, GTK_WIDGET(fl), false);
+    gtk_overlay_set_overlay_pass_through(overlay, GTK_WIDGET(fixed), true);
+
+    // TODO: WebView needs to stay on top until https://github.com/flutter/flutter/issues/66751
+    // is addressed.
+    //
+    // gtk_overlay_reorder_overlay(overlay, GTK_WIDGET(fixed), 0);
 }
 
 WebViewManager::~WebViewManager()

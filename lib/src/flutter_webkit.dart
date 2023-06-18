@@ -29,7 +29,20 @@ class FlutterWebkit {
     return FlutterWebkitPlatform.instance.getLoadEvents(webviewId);
   }
 
-  Future<dynamic> evaluateJavascript(int webviewId, String script) {
-    return FlutterWebkitPlatform.instance.evaluateJavascript(webviewId, script);
+
+  Stream<String?> getUriEvents(int webviewId) {
+    return FlutterWebkitPlatform.instance.getUriEvents(webviewId);
+  }
+
+  Stream<String?> getTitleEvents(int webviewId) {
+    return FlutterWebkitPlatform.instance.getTitleEvents(webviewId);
+  }
+
+  Future<dynamic> evaluateJavascript(int webviewId, int callId, String script) {
+    return FlutterWebkitPlatform.instance.evaluateJavascript(webviewId, callId, script);
+  }
+
+  Future<void> reload(int webviewId, bool bypassCache) {
+    return FlutterWebkitPlatform.instance.reload(webviewId, bypassCache);
   }
 }

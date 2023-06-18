@@ -26,6 +26,18 @@ abstract class FlutterWebkitPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  Stream<LoadEvent> getLoadEvents(int webviewId) {
+    throw UnimplementedError('getLoadEvents() has not been implemented.');
+  }
+
+  Stream<String?> getUriEvents(int webviewId) {
+    throw UnimplementedError('getUriEvents() has not been implemented.');
+  }
+
+  Stream<String?> getTitleEvents(int webviewId) {
+    throw UnimplementedError('getTitleEvents() has not been implemented.');
+  }
+
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
@@ -46,12 +58,11 @@ abstract class FlutterWebkitPlatform extends PlatformInterface {
     throw UnimplementedError('setDimension() has not been implemented.');
   }
 
-  Stream<LoadEvent> getLoadEvents(int webviewId) {
-    throw UnimplementedError('getLoadEvents() has not been implemented.');
-  }
-
-  Future<dynamic> evaluateJavascript(int webviewId, String script) {
+  Future<dynamic> evaluateJavascript(int webviewId, int callId, String script) {
     throw UnimplementedError('evaluateJavascript() has not been implemented.');
   }
   
+  Future<void> reload(int webviewId, bool bypassCache) {
+    throw UnimplementedError('reload() has not been implemented.');
+  }
 }
