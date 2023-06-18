@@ -28,9 +28,14 @@ class _MyAppState extends State<MyApp> {
         .where((element) => element == LoadEvent.finished)
         .listen((value) async {
       final val = await _controller.evaluateJavascript(
-          "let e = document.querySelector('#header > h1 > span, a'); if(e!=null) e.innerHTML = \"Hello! three.js\";");
+          "window.webkit.messageHandlers.onLoadComplete.postMessage({msg:'Hello from javascript.'});"
+          "let e = document.querySelector('#header > h1 > span, a');"
+          "if(e!=null) e.innerHTML = 'Hello! three.js';");
       debugPrint("js result: $val");
     });
+
+    _controller.registerJavascriptCallback(
+        "onLoadComplete", (data) => debugPrint("onLoadComplete: $data"));
   }
 
   @override
@@ -53,7 +58,6 @@ class _MyAppState extends State<MyApp> {
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Reload',
-              enableFeedback: true,
               onPressed: () {
                 _controller.reload();
               },

@@ -21,7 +21,10 @@ class WebView extends StatelessWidget {
             controller._update(rect);
           }
         });
-        return Container(constraints: const BoxConstraints.expand(), color: const Color(0x00000000),);
+        return Container(
+          constraints: const BoxConstraints.expand(),
+          color: const Color(0x00000000),
+        );
       },
     );
   }
@@ -31,6 +34,8 @@ class WebViewController {
   final _plugin = FlutterWebkit();
   int _handle = 0;
   final _readyCompleter = Completer<void>();
+  final _registeredJsCallbacks = <String, StreamSubscription>{};
+
   late final _loadEvents = StreamController<LoadEvent>.broadcast();
   late final _uriEvents = StreamController<String?>.broadcast();
   late final _titleEvents = StreamController<String?>.broadcast();
@@ -68,7 +73,43 @@ class WebViewController {
     return _loadEvents.stream;
   }
 
-  void open(String uri) async {
+  Future<void> registerJavascriptCallback(
+      String name, void Function(dynamic param) callback) async {
+    if (_registeredJsCallbacks.containsKey(name)) {
+      throw WebViewError(
+          "Javascript callback '$name' is already regitered in webview #$_handle.");
+    }
+
+    await ready;
+    bool ok = false;
+
+    final sub =
+        _plugin.getJavascriptCallbackStream(_handle, name).listen(callback);
+    try {
+      if (!await _plugin.registerJavascriptCallback(_handle, name)) {
+        throw WebViewError(
+            "Failed to register javascript callback in webview #$_handle.");
+      }
+
+      _registeredJsCallbacks[name] = sub;
+      ok = true;
+    } finally {
+      if (!ok) {
+        sub.cancel();
+      }
+    }
+  }
+
+   Future<void> unregisterJavascriptCallback(String name) async {
+    await ready;
+    if (!_registeredJsCallbacks.containsKey(name)) {
+      return;
+    }
+    await _plugin.unregisterJavascriptCallback(_handle, name);
+    _registeredJsCallbacks.remove(name)?.cancel();
+  }
+
+  Future<void> open(String uri) async {
     await ready;
     _plugin.open(_handle, uri);
   }
@@ -78,7 +119,7 @@ class WebViewController {
     return _plugin.evaluateJavascript(_handle, _jsCallId++, script);
   }
 
-  Future<void> reload({bool bypassCache = false}) async{
+  Future<void> reload({bool bypassCache = false}) async {
     await ready;
     return _plugin.reload(_handle, bypassCache);
   }
@@ -88,8 +129,11 @@ class WebViewController {
     _plugin.setDimension(_handle, rect);
   }
 
-  void dispose() async {
+   Future<void> dispose() async {
     await ready;
+    for (final cb in _registeredJsCallbacks.keys.toList()) {
+      await unregisterJavascriptCallback(cb);
+    }
     _plugin.destroyWebView(_handle);
   }
 }

@@ -1,6 +1,7 @@
 #include "WebView.h"
 #include <JavaScriptCore/JavaScript.h>
 #include <memory>
+#include <string>
 
 // Fix IntelliSense errors
 #ifndef g_autoptr
@@ -15,7 +16,9 @@ typedef struct
 } js_callback_closure_t;
 
 WebView::WebView(FlMethodChannel *method_channel, GtkFixed *container)
-    : _container(container), _method_channel(method_channel)
+    : _container(container),
+      _method_channel(method_channel),
+      _callback_states()
 {
     auto webview = webkit_web_view_new();
     this->_webview = WEBKIT_WEB_VIEW(webview);
@@ -125,6 +128,7 @@ void WebView::evaluate_javascript(uint64_t id, const gchar *script)
                 fl_value_set_string_take(r, "error", fl_value_new_int(0));
                 fl_value_set_string_take(r, "message", fl_value_new_null());
                 fl_value_set_string_take(r, "data", json == NULL ? fl_value_new_null() : fl_value_new_string(json));
+
                 g_free(json);
             }
             else
@@ -149,4 +153,78 @@ void WebView::reload(bool bypass_cache)
     {
         webkit_web_view_reload(this->_webview);
     }
+}
+
+bool WebView::register_javascript_callback(const gchar *name)
+{
+    std::string cb_name(name);
+    if (this->_callback_states.count(cb_name) > 0)
+    {
+        g_warning("Javascript callback '%s' is already register in webview #%ld.", name, (uint64_t)this);
+        return false;
+    }
+
+    JavascriptCallbackState state{
+        .handler_id = 0,
+        .name = cb_name,
+        .webview = this};
+
+    this->_callback_states.insert(std::make_pair(cb_name, state));
+
+    auto manager = webkit_web_view_get_user_content_manager(this->_webview);
+
+    std::string signal_name("script-message-received::");
+    signal_name.append(cb_name);
+
+    auto handler_id = g_signal_connect(
+        manager, signal_name.c_str(), (GCallback)(+[](WebKitUserContentManager *content_manager, WebKitJavascriptResult *res, gpointer user_data)
+                                                  {
+            auto state =(JavascriptCallbackState *)user_data;
+            auto self = state->webview;
+            auto handle = (uint64_t)self;
+
+            auto value = webkit_javascript_result_get_js_value(res);
+            auto json = jsc_value_to_json(value, 0);
+
+            g_autoptr(FlValue) r = fl_value_new_map();
+            fl_value_set_string_take(r, "webview", fl_value_new_int(handle));
+            fl_value_set_string_take(r, "name", fl_value_new_string(state->name.c_str()));
+            fl_value_set_string_take(r, "data", json == NULL ? fl_value_new_null() : fl_value_new_string(json));
+            g_free(json);
+
+            fl_method_channel_invoke_method(self->_method_channel, "on_javascript_callback", r, NULL, NULL, NULL); }),
+        &this->_callback_states[cb_name]);
+
+    this->_callback_states[cb_name].handler_id = handler_id;
+
+    auto ok = webkit_user_content_manager_register_script_message_handler(manager, name);
+    if (!ok)
+    {
+        this->_callback_states.erase(cb_name);
+        g_signal_handler_disconnect(manager, handler_id);
+    }
+    else
+    {
+        g_message("Registered callback '%s' in webview #%ld.", name, (uint64_t)this);
+    }
+
+    return ok;
+}
+
+void WebView::unregister_javascript_callback(const gchar *name)
+{
+    std::string cb_name(name);
+    if (this->_callback_states.count(cb_name) == 0)
+    {
+        g_warning("Unable to unregister callback '%s' from webview #%ld as it's not registered.", name, (uint64_t)this);
+        return;
+    }
+
+    auto manager = webkit_web_view_get_user_content_manager(this->_webview);
+    webkit_user_content_manager_unregister_script_message_handler(manager, name);
+
+    g_signal_handler_disconnect(manager, this->_callback_states[cb_name].handler_id);
+    this->_callback_states.erase(cb_name);
+
+    g_message("Unregistered callback '%s' from webview #%ld.", name, (uint64_t)this);
 }

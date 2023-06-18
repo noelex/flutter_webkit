@@ -23,6 +23,13 @@ class _JSCallResponse {
   _JSCallResponse(this.callId, this.error, this.message, this.data);
 }
 
+class _JSCallback {
+  final String name;
+  final dynamic data;
+
+  _JSCallback(this.name, this.data);
+}
+
 /// An implementation of [FlutterWebkitPlatform] that uses method channels.
 class MethodChannelFlutterWebkit extends FlutterWebkitPlatform {
   /// The method channel used to interact with the native platform.
@@ -35,6 +42,8 @@ class MethodChannelFlutterWebkit extends FlutterWebkitPlatform {
   final _uriEventStream = StreamController<_WebViewEvent<String?>>.broadcast();
   final _titleEventStream =
       StreamController<_WebViewEvent<String?>>.broadcast();
+  final _javascriptCallbackStream =
+      StreamController<_WebViewEvent<_JSCallback>>.broadcast();
 
   MethodChannelFlutterWebkit() {
     methodChannel.setMethodCallHandler((call) async {
@@ -68,6 +77,16 @@ class MethodChannelFlutterWebkit extends FlutterWebkitPlatform {
           final webview = call.arguments["webview"] as int;
           final title = call.arguments["title"] as String?;
           _titleEventStream.add(_WebViewEvent(webview, title));
+          break;
+        case "on_javascript_callback":
+          final webview = call.arguments["webview"] as int;
+          final name = call.arguments["name"] as String;
+          final data = call.arguments["data"] as String?;
+          _javascriptCallbackStream.add(_WebViewEvent(
+            webview,
+            _JSCallback(
+                name, data == null || data.isEmpty ? null : jsonDecode(data)),
+          ));
           break;
       }
 
@@ -158,5 +177,31 @@ class MethodChannelFlutterWebkit extends FlutterWebkitPlatform {
       "webview": webviewId,
       "bypass_cache": bypassCache,
     });
+  }
+
+  @override
+  Future<bool> registerJavascriptCallback(int webviewId, String name) async {
+    final v =
+        await methodChannel.invokeMethod<bool>("register_javascript_callback", {
+      "webview": webviewId,
+      "name": name,
+    });
+    return v ?? false;
+  }
+
+  @override
+  Future<void> unregisterJavascriptCallback(int webviewId, String name) {
+    return methodChannel.invokeMethod<void>("unregister_javascript_callback", {
+      "webview": webviewId,
+      "name": name,
+    });
+  }
+
+  @override
+  Stream<dynamic> getJavascriptCallbackStream(int webviewId, String name) {
+    return _javascriptCallbackStream.stream
+        .where(
+            (event) => event.webviewId == webviewId && event.data.name == name)
+        .map((event) => event.data.data);
   }
 }

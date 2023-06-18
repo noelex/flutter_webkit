@@ -186,7 +186,7 @@ static FlMethodResponse *handle_reload(FlutterWebkitPlugin *self, FlValue *args)
     }
     else
     {
-      g_message("Reloading webview #%ld, bypass_cache = %s.\n", id, bypass_cache ? "yes" : "no");
+      g_debug("Reloading webview #%ld, bypass_cache = %s.\n", id, bypass_cache ? "yes" : "no");
       webview->reload(bypass_cache);
     }
   }
@@ -194,6 +194,70 @@ static FlMethodResponse *handle_reload(FlutterWebkitPlugin *self, FlValue *args)
   g_autoptr(FlValue) result = fl_value_new_null();
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
+
+static FlMethodResponse *handle_register_javascript_callback(FlutterWebkitPlugin *self, FlValue *args)
+{
+  auto arg_id = fl_value_lookup_string(args, "webview");
+  auto arg_name = fl_value_lookup_string(args, "name");
+
+  bool ret = false;
+  if (arg_id == NULL || arg_name == NULL ||
+      fl_value_get_type(arg_id) != FL_VALUE_TYPE_INT ||
+      fl_value_get_type(arg_name) != FL_VALUE_TYPE_STRING)
+  {
+    g_warning("Unable to register javascript callback, invalid arguments.\n");
+  }
+  else
+  {
+    auto id = fl_value_get_int(arg_id);
+    auto name = fl_value_get_string(arg_name);
+
+    auto webview = self->manager->get_webview(id);
+    if (webview == NULL)
+    {
+      g_warning("Unable to register javascript callback, webview #%ld is not found.\n", id);
+    }
+    else
+    {
+      ret = webview->register_javascript_callback(name);
+    }
+  }
+
+  g_autoptr(FlValue) result = fl_value_new_bool(ret);
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
+static FlMethodResponse *handle_unregister_javascript_callback(FlutterWebkitPlugin *self, FlValue *args)
+{
+  auto arg_id = fl_value_lookup_string(args, "webview");
+  auto arg_name = fl_value_lookup_string(args, "name");
+
+  if (arg_id == NULL || arg_name == NULL ||
+      fl_value_get_type(arg_id) != FL_VALUE_TYPE_INT ||
+      fl_value_get_type(arg_name) != FL_VALUE_TYPE_STRING)
+  {
+    g_warning("Unable to unregister javascript callback, invalid arguments.\n");
+  }
+  else
+  {
+    auto id = fl_value_get_int(arg_id);
+    auto name = fl_value_get_string(arg_name);
+
+    auto webview = self->manager->get_webview(id);
+    if (webview == NULL)
+    {
+      g_warning("Unable to register javascript callback, webview #%ld is not found.\n", id);
+    }
+    else
+    {
+      webview->unregister_javascript_callback(name);
+    }
+  }
+
+  g_autoptr(FlValue) result = fl_value_new_null();
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
 // Called when a method call is received from Flutter.
 static void flutter_webkit_plugin_handle_method_call(
     FlutterWebkitPlugin *self,
@@ -231,6 +295,14 @@ static void flutter_webkit_plugin_handle_method_call(
   else if (strcmp(method, "reload") == 0)
   {
     response = handle_reload(self, args);
+  }
+  else if (strcmp(method, "register_javascript_callback") == 0)
+  {
+    response = handle_register_javascript_callback(self, args);
+  }
+  else if (strcmp(method, "unregister_javascript_callback") == 0)
+  {
+    response = handle_unregister_javascript_callback(self, args);
   }
   else
   {

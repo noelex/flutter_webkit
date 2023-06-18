@@ -29,7 +29,6 @@ class FlutterWebkit {
     return FlutterWebkitPlatform.instance.getLoadEvents(webviewId);
   }
 
-
   Stream<String?> getUriEvents(int webviewId) {
     return FlutterWebkitPlatform.instance.getUriEvents(webviewId);
   }
@@ -39,10 +38,26 @@ class FlutterWebkit {
   }
 
   Future<dynamic> evaluateJavascript(int webviewId, int callId, String script) {
-    return FlutterWebkitPlatform.instance.evaluateJavascript(webviewId, callId, script);
+    return FlutterWebkitPlatform.instance
+        .evaluateJavascript(webviewId, callId, script);
   }
 
   Future<void> reload(int webviewId, bool bypassCache) {
     return FlutterWebkitPlatform.instance.reload(webviewId, bypassCache);
+  }
+
+  Future<bool> registerJavascriptCallback(int webviewId, String name) {
+    return FlutterWebkitPlatform.instance
+        .registerJavascriptCallback(webviewId, name);
+  }
+
+  Future<void> unregisterJavascriptCallback(int webviewId, String name) {
+    return FlutterWebkitPlatform.instance
+        .unregisterJavascriptCallback(webviewId, name);
+  }
+
+  Stream<dynamic> getJavascriptCallbackStream(int webviewId, String name) {
+    return FlutterWebkitPlatform.instance
+        .getJavascriptCallbackStream(webviewId, name);
   }
 }

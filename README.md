@@ -2,6 +2,8 @@
 
 Linux `WebView` widget backed by [WebKitGTK](https://webkitgtk.org/).
 
+![example](example.png)
+
 ## Installing
 Clone this repository or add as a Git submodule into your flutter project, and modify your `pubspec.yaml` by adding `flutter_webkit` to the `dependencies` section:
 ```yml
@@ -69,17 +71,22 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _controller = WebViewController(uri: "https://threejs.org/");
-    _controller.load.listen((event) {
+    _controller.loadingStatusStream.listen((event) {
       debugPrint("Load state changed to '$event'.");
     });
 
-    _controller.load
+    _controller.loadingStatusStream
         .where((element) => element == LoadEvent.finished)
         .listen((value) async {
       final val = await _controller.evaluateJavascript(
-          "let e = document.querySelector('#header > h1 > span, a'); if(e!=null) e.innerHTML = \"Hello! three.js\";");
+          "window.webkit.messageHandlers.onLoadComplete.postMessage({msg:'Hello from javascript.'});"
+          "let e = document.querySelector('#header > h1 > span, a');"
+          "if(e!=null) e.innerHTML = 'Hello! three.js';");
       debugPrint("js result: $val");
     });
+
+    _controller.registerJavascriptCallback(
+        "onLoadComplete", (data) => debugPrint("onLoadComplete: $data"));
   }
 
   @override
@@ -91,9 +98,22 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: StreamBuilder(
+            builder: (context, snapshot) => Text(snapshot.data ?? "Loading..."),
+            stream: _controller.titleStream,
+          ),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Reload',
+              onPressed: () {
+                _controller.reload();
+              },
+            )
+          ],
         ),
         body: Center(
           child: WebView(controller: _controller),

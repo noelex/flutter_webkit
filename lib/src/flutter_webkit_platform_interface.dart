@@ -38,31 +38,43 @@ abstract class FlutterWebkitPlatform extends PlatformInterface {
     throw UnimplementedError('getTitleEvents() has not been implemented.');
   }
 
+  Stream<dynamic> getJavascriptCallbackStream(int webviewId, String name){
+    throw UnimplementedError('getJavascriptCallbackStream() has not been implemented.');
+  }
+
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<int?> createWebView(){
+  Future<int?> createWebView() {
     throw UnimplementedError('createWebView() has not been implemented.');
   }
 
-  Future<void> destroyWebView(int webviewId){
+  Future<void> destroyWebView(int webviewId) {
     throw UnimplementedError('destroyWebView() has not been implemented.');
   }
 
-  Future<void> open(int webviewId, String uri){
+  Future<void> open(int webviewId, String uri) {
     throw UnimplementedError('open() has not been implemented.');
   }
-  
-  Future<void> setDimension(int webviewId, Rect rect){
+
+  Future<void> setDimension(int webviewId, Rect rect) {
     throw UnimplementedError('setDimension() has not been implemented.');
   }
 
   Future<dynamic> evaluateJavascript(int webviewId, int callId, String script) {
     throw UnimplementedError('evaluateJavascript() has not been implemented.');
   }
-  
+
   Future<void> reload(int webviewId, bool bypassCache) {
     throw UnimplementedError('reload() has not been implemented.');
+  }
+
+  Future<bool> registerJavascriptCallback(int webviewId, String name) {
+    throw UnimplementedError('register_javascript_callback() has not been implemented.');
+  }
+
+  Future<void> unregisterJavascriptCallback(int webviewId, String name) {
+    throw UnimplementedError('unregister_javascript_callback() has not been implemented.');
   }
 }
