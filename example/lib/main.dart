@@ -20,35 +20,35 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    _controller = WebViewController(
-      uri: "https://threejs.org",
-      settings: WebViewSettings(
-        enableDeveloperExtras: true,
-      )
-    );
+    // _controller = WebViewController(
+    //   uri: "https://threejs.org",
+    //   settings: WebViewSettings(
+    //     enableDeveloperExtras: true,
+    //   )
+    // );
 
-    _controller.loadingStatusStream.listen((event) {
-      debugPrint("Load state changed to '$event'.");
-    });
+    // _controller.loadingStatusStream.listen((event) {
+    //   debugPrint("Load state changed to '$event'.");
+    // });
 
-    _controller.loadingStatusStream
-        .where((element) => element == LoadEvent.finished)
-        .listen((value) async {
-      final val = await _controller.evaluateJavascript(
-          "window.webkit.messageHandlers.onLoadComplete.postMessage({msg:'Hello from javascript.'});"
-          "let e = document.querySelector('#header > h1 > span, a');"
-          "if(e!=null) e.innerHTML = 'Hello! three.js';");
-      debugPrint("js result: $val");
-    });
+    // _controller.loadingStatusStream
+    //     .where((element) => element == LoadEvent.finished)
+    //     .listen((value) async {
+    //   final val = await _controller.evaluateJavascript(
+    //       "window.webkit.messageHandlers.onLoadComplete.postMessage({msg:'Hello from javascript.'});"
+    //       "let e = document.querySelector('#header > h1 > span, a');"
+    //       "if(e!=null) e.innerHTML = 'Hello! three.js';");
+    //   debugPrint("js result: $val");
+    // });
 
-    _controller.registerJavascriptCallback(
-        "onLoadComplete", (data) => debugPrint("onLoadComplete: $data"));    
+    // _controller.registerJavascriptCallback(
+    //     "onLoadComplete", (data) => debugPrint("onLoadComplete: $data"));    
   }
 
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
+    // _controller.dispose();
   }
 
   @override
@@ -57,29 +57,30 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: StreamBuilder(
-            builder: (context, snapshot) => Text(snapshot.data ?? ""),
-            stream: _controller.titleStream,
-          ),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Reload',
-              onPressed: () {
-                _controller.reload();
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: 'Inspect',
-              onPressed: () {
-                _controller.openInspector();
-              },
-            )
-          ],
+          // title: StreamBuilder(
+          //   builder: (context, snapshot) => Text(snapshot.data ?? ""),
+          //   stream: _controller.titleStream,
+          // ),
+          // actions: <Widget>[
+          //   IconButton(
+          //     icon: const Icon(Icons.refresh),
+          //     tooltip: 'Reload',
+          //     onPressed: () {
+          //       _controller.reload();
+          //     },
+          //   ),
+          //   IconButton(
+          //     icon: const Icon(Icons.search),
+          //     tooltip: 'Inspect',
+          //     onPressed: () {
+          //       _controller.openInspector();
+          //     },
+          //   )
+          // ],
         ),
-        body: Center(
-          child: WebView(controller: _controller),
+        body: const Center(
+          // child: WebView(controller: _controller),
+          child:  WebView2(uri: "https://threejs.org/examples/#webgl_animation_skinning_additive_blending"),
         ),
       ),
     );

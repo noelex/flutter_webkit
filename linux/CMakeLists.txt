@@ -17,6 +17,8 @@ list(APPEND PLUGIN_SOURCES
   "flutter_webkit_plugin.cc"
   "WebViewManager.cc"
   "WebView.cc"
+  "WebViewPlatformView.cc"
+  "WebViewViewFactory.cc"
 )
 
 # Define the plugin library target. Its name must not be changed (see comment
@@ -59,7 +61,27 @@ else()
   message(CHECK_FAIL "WebKitGTK is not found.")
 endif()
 
-target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
+include(FetchContent)
+FetchContent_Declare(
+  custom_engine
+  URL      https://github.com/noelex/engine/releases/download/3.10.5-platform-view/libflutter_linux_gtk-linux-x64.tar.xz
+  URL_HASH SHA256=2f2508019a99c9301b8715604b364393438526316972d38a3b5c7dc96af43901
+  DOWNLOAD_DIR ${CMAKE_BINARY_DIR}
+)
+FetchContent_MakeAvailable(custom_engine)
+
+install(
+  FILES 
+    "${custom_engine_SOURCE_DIR}/libflutter_linux_gtk.so"
+    "${custom_engine_SOURCE_DIR}/libflutter_engine.so"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"
+COMPONENT Runtime)
+
+target_include_directories(${PLUGIN_NAME} PUBLIC "${custom_engine_SOURCE_DIR}")
+
+target_link_libraries(${PLUGIN_NAME} PUBLIC 
+  "${custom_engine_SOURCE_DIR}/libflutter_linux_gtk.so"
+  "${custom_engine_SOURCE_DIR}/libflutter_engine.so")
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
 # List of absolute paths to libraries that should be bundled with the plugin.

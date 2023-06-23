@@ -9,6 +9,9 @@
 #include "flutter_webkit_plugin_private.h"
 #include "WebViewManager.h"
 
+
+#include "WebViewViewFactory.h"
+
 #define FLUTTER_WEBKIT_PLUGIN(obj)                                     \
   (G_TYPE_CHECK_INSTANCE_CAST((obj), flutter_webkit_plugin_get_type(), \
                               FlutterWebkitPlugin))
@@ -392,6 +395,12 @@ void flutter_webkit_plugin_register_with_registrar(FlPluginRegistrar *registrar)
                                             g_object_ref(plugin),
                                             g_object_unref);
   plugin->manager = new WebViewManager(channel, view);
+
+  FlBinaryMessenger* messenger = fl_plugin_registrar_get_messenger(registrar);
+  WebViewViewFactory* factory = webview_view_factory_new(messenger);
+  fl_plugin_registrar_register_view_factory(registrar,
+                                            FL_PLATFORM_VIEW_FACTORY(factory),
+                                            "plugins.flutter.io/webview");
 
   g_object_unref(plugin);
 }
